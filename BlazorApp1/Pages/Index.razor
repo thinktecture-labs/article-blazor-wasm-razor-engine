@@ -1,0 +1,45 @@
+﻿@page "/"
+@using BlazorApp1.Templating
+
+@inject TemplateEngine TemplateEngine
+
+<div>
+    <strong>Template:</strong> @_TEMPLATE
+</div>
+<div>
+    <strong>Profile.Name:</strong> <input value="@_profile.Name" @oninput="CreateBinder()"/>
+</div>
+
+<h3>Rendered message</h3>
+@_renderedMessage
+
+@code
+{
+    private const string _TEMPLATE = "Hello @Model.Name";
+
+    private UserProfile _profile;
+    private Template<UserProfile> _compiledTemplate;
+    private string _renderedMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _profile = new UserProfile { Name = "John" };
+        _compiledTemplate = await TemplateEngine.CompileAsync(_TEMPLATE, _profile);
+
+        await RenderMessageAsync();
+    }
+
+    private async Task RenderMessageAsync()
+    {
+        _renderedMessage = await _compiledTemplate.GetRenderedTextAsync(_profile);
+    }
+
+    private EventCallback<ChangeEventArgs> CreateBinder()
+    {
+        return EventCallback.Factory.CreateBinder<string>(this, async value =>
+                                                                      {
+                                                                          _profile.Name = value;
+                                                                          await RenderMessageAsync();
+                                                                      }, _profile.Name);
+    }
+}
